@@ -1,0 +1,5 @@
+[couchdb]
+server_url = "http://172.25.60.51:5984/"
+db_name = "email_test"
+username = "mbox_testuser" 
+password = "password"
