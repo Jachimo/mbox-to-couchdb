@@ -14,7 +14,7 @@ import hashlib
 from email.header import decode_header, make_header
 from email.policy import default
 
-DEBUG = True
+DEBUG = False
 
 
 def main(args):
@@ -60,6 +60,7 @@ def main(args):
         mbox = mailbox.mbox(mbox_file, create=False)
         mbox.lock()
 
+        count = 0
         for message in mbox:
             couchdoc = couchdb.client.Document()
             
@@ -85,7 +86,7 @@ def main(args):
             try:
                 db.save(couchdoc)
             except couchdb.http.ResourceConflict:
-                print(f"Exception while saving Message-ID {couchdoc['_id']}")
+                print(f"Message-ID already in database: {couchdoc['_id']}")
                 retval = 2
                 continue
 
@@ -93,10 +94,11 @@ def main(args):
             db.put_attachment(
                 doc=couchdoc,
                 content=message.as_bytes(),
-                filename=couchdoc['_id'].strip().strip('<>\/|') + '.eml',
+                filename=couchdoc['_id'].strip().strip("<>\\/|") + '.eml',
                 content_type='message/rfc822')
             
             # Cleanup
+            count += 1
             del(couchdoc)
 
     except Exception as e:
@@ -105,6 +107,7 @@ def main(args):
         retval = 1
         raise
     finally:
+        print(f"Added {count} messages to {db_name}")
         mbox.unlock()
         mbox.close()
         return retval
